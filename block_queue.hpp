@@ -16,179 +16,179 @@
 
 template<class T>
 class block_queue {
-  public:
-    block_queue(int max_size = 1000) {
-      if (max_size <= 0) {
-        exit(-1);
-      }
-
-      m_max_size = max_size;
-      m_array = new T[m_max_size];
-      m_size = 0;
-      m_front = -1;
-      m_back = -1;
-
-      m_mutex = new pthread_mutex_t;
-      m_cond = new pthread_cond_t;
-      pthread_mutex_init(m_mutex, NULL);
-      pthread_cond_init(m_cond, NULL);
+ public:
+  block_queue(int max_size = 1000) {
+    if (max_size <= 0) {
+      exit(-1);
     }
 
-    ~block_queue() {
-      pthread_mutex_lock(m_mutex);
-      if (m_array != NULL) {
-        delete m_array;
-      }
-      pthread_mutex_unlock(m_mutex);
+    m_max_size = max_size;
+    m_array = new T[m_max_size];
+    m_size = 0;
+    m_front = -1;
+    m_back = -1;
 
-      pthread_mutex_destroy(m_mutex);
-      pthread_cond_destroy(m_cond);
+    m_mutex = new pthread_mutex_t;
+    m_cond = new pthread_cond_t;
+    pthread_mutex_init(m_mutex, NULL);
+    pthread_cond_init(m_cond, NULL);
+  }
 
-      if (m_mutex != NULL) {
-        delete m_mutex;
-        m_mutex = NULL;
-      }
-      if (m_cond != NULL) {
-        delete m_cond;
-        m_cond = NULL;
-      }
-    } 
-
-    void clear() {
-      pthread_mutex_lock(m_mutex);
-      m_size = 0;
-      m_front = -1;
-      m_back = -1;
-      pthread_mutex_unlock(m_mutex);
+  ~block_queue() {
+    pthread_mutex_lock(m_mutex);
+    if (m_array != NULL) {
+      delete m_array;
     }
+    pthread_mutex_unlock(m_mutex);
 
-    bool full() const {
-      pthread_mutex_lock(m_mutex);
-      if (m_size >= m_max_size) {
-        pthread_mutex_unlock(m_mutex);
-        return true;
-      }
-      pthread_mutex_unlock(m_mutex);
-      return false;
+    pthread_mutex_destroy(m_mutex);
+    pthread_cond_destroy(m_cond);
+
+    if (m_mutex != NULL) {
+      delete m_mutex;
+      m_mutex = NULL;
     }
-
-    bool empty() const {
-      pthread_mutex_lock(m_mutex);
-      if (0 == m_size) {
-        pthread_mutex_unlock(m_mutex);
-        return true;
-      }
-      pthread_mutex_unlock(m_mutex);
-      return false;
+    if (m_cond != NULL) {
+      delete m_cond;
+      m_cond = NULL;
     }
+  } 
 
-    bool front(T& value) const {
-      pthread_mutex_lock(m_mutex);
-      if (0 == m_size) {
-        pthread_mutex_unlock(m_mutex);
-        return false;
-      }
-      value = m_array[m_front];
+  void clear() {
+    pthread_mutex_lock(m_mutex);
+    m_size = 0;
+    m_front = -1;
+    m_back = -1;
+    pthread_mutex_unlock(m_mutex);
+  }
+
+  bool full() const {
+    pthread_mutex_lock(m_mutex);
+    if (m_size >= m_max_size) {
       pthread_mutex_unlock(m_mutex);
       return true;
     }
+    pthread_mutex_unlock(m_mutex);
+    return false;
+  }
 
-    bool back(T& value) const {
-      pthread_mutex_lock(m_mutex);
-      if (0 == m_size) {
-        pthread_mutex_unlock(m_mutex);
-        return false;
-      }
-      value = m_array[m_back];
+  bool empty() const {
+    pthread_mutex_lock(m_mutex);
+    if (0 == m_size) {
       pthread_mutex_unlock(m_mutex);
       return true;
     }
+    pthread_mutex_unlock(m_mutex);
+    return false;
+  }
 
-    int size() const {
-      int tmp = 0;
-      pthread_mutex_lock(m_mutex);
-      tmp = m_size;
+  bool front(T& value) const {
+    pthread_mutex_lock(m_mutex);
+    if (0 == m_size) {
       pthread_mutex_unlock(m_mutex);
-      return tmp;
+      return false;
     }
+    value = m_array[m_front];
+    pthread_mutex_unlock(m_mutex);
+    return true;
+  }
 
-    int max_size() const {
-      int tmp = 0;
-      pthread_mutex_lock(m_mutex);
-      tmp = m_max_size;
+  bool back(T& value) const {
+    pthread_mutex_lock(m_mutex);
+    if (0 == m_size) {
       pthread_mutex_unlock(m_mutex);
-      return tmp;
+      return false;
     }
+    value = m_array[m_back];
+    pthread_mutex_unlock(m_mutex);
+    return true;
+  }
 
-    bool push(const T& item) {
-      pthread_mutex_lock(m_mutex);
-      if (m_size >= m_max_size) {
-        pthread_cond_broadcast(m_cond);
-        pthread_mutex_unlock(m_mutex);
-        return false;
-      }
+  int size() const {
+    int tmp = 0;
+    pthread_mutex_lock(m_mutex);
+    tmp = m_size;
+    pthread_mutex_unlock(m_mutex);
+    return tmp;
+  }
 
-      m_back = (m_back + 1) % m_max_size;
-      m_array[m_back] = item;
+  int max_size() const {
+    int tmp = 0;
+    pthread_mutex_lock(m_mutex);
+    tmp = m_max_size;
+    pthread_mutex_unlock(m_mutex);
+    return tmp;
+  }
 
-      m_size++;
-      
+  bool push(const T& item) {
+    pthread_mutex_lock(m_mutex);
+    if (m_size >= m_max_size) {
       pthread_cond_broadcast(m_cond);
       pthread_mutex_unlock(m_mutex);
-
-      return true;
+      return false;
     }
 
-    bool pop(T& item) {
-      pthread_mutex_lock(m_mutex);
-      while (m_size <= 0) {
-        if (0 != pthread_cond_wait(m_cond, m_mutex)) {
-          pthread_mutex_unlock(m_mutex);
-          return false;
-        }
-      }
+    m_back = (m_back + 1) % m_max_size;
+    m_array[m_back] = item;
 
-      m_front = (m_front + 1) % m_max_size;
-      item = m_array[m_front];
-      m_size--;
-      pthread_mutex_unlock(m_mutex);
-      return true;
-    }
+    m_size++;
 
-    bool pop(T& item, int ms_timeout) {
-      struct timespec t = {0, 0};
-      struct timeval now = {0, 0};
-      gettimeofday(&now, NULL);
-      pthread_mutex_lock(m_mutex);
-      if (m_size <= 0) {
-        t.tv_sec = now.tv_sec + ms_timeout / 1000;
-        t.tv_nsec = (ms_timeout % 1000) * 1000;
-        if (0 != pthread_cond_timedwait(m_cond, m_mutex, &t)) {
-          pthread_mutex_unlock(m_mutex);
-          return false;
-        }
-      }
+    pthread_cond_broadcast(m_cond);
+    pthread_mutex_unlock(m_mutex);
 
-      if (m_size <= 0) {
+    return true;
+  }
+
+  bool pop(T& item) {
+    pthread_mutex_lock(m_mutex);
+    while (m_size <= 0) {
+      if (0 != pthread_cond_wait(m_cond, m_mutex)) {
         pthread_mutex_unlock(m_mutex);
         return false;
       }
-
-      m_front = (m_front + 1) % m_max_size;
-      item = m_array[m_front];
-      m_size--;
-      pthread_mutex_unlock(m_mutex);
-      return true;
     }
 
-  private:
-    pthread_mutex_t *m_mutex;
-    pthread_cond_t  *m_cond;
-    T   *m_array;
-    int m_size;
-    int m_max_size;
-    int m_front;
-    int m_back;
+    m_front = (m_front + 1) % m_max_size;
+    item = m_array[m_front];
+    m_size--;
+    pthread_mutex_unlock(m_mutex);
+    return true;
+  }
+
+  bool pop(T& item, int ms_timeout) {
+    struct timespec t = {0, 0};
+    struct timeval now = {0, 0};
+    gettimeofday(&now, NULL);
+    pthread_mutex_lock(m_mutex);
+    if (m_size <= 0) {
+      t.tv_sec = now.tv_sec + ms_timeout / 1000;
+      t.tv_nsec = (ms_timeout % 1000) * 1000;
+      if (0 != pthread_cond_timedwait(m_cond, m_mutex, &t)) {
+        pthread_mutex_unlock(m_mutex);
+        return false;
+      }
+    }
+
+    if (m_size <= 0) {
+      pthread_mutex_unlock(m_mutex);
+      return false;
+    }
+
+    m_front = (m_front + 1) % m_max_size;
+    item = m_array[m_front];
+    m_size--;
+    pthread_mutex_unlock(m_mutex);
+    return true;
+  }
+
+ private:
+  pthread_mutex_t *m_mutex;
+  pthread_cond_t  *m_cond;
+  T   *m_array;
+  int m_size;
+  int m_max_size;
+  int m_front;
+  int m_back;
 };
 
 #endif  // BLOCK_QUEUE_HPP
