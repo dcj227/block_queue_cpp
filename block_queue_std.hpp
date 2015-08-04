@@ -25,9 +25,6 @@ class BlockQueueStd {
     pthread_cond_destory(&cond_);
   }
 
-  /*
-   *
-   */
   int init() {
     int ret = -1;
     ret = pthread_mutex_init(&mutex_, NULL);
@@ -36,31 +33,49 @@ class BlockQueueStd {
     }
     ret = pthread_cond_init(&cond_, NULL);
     if (ret != 0) {
-      pthread_mutex_destory(&mutex);   
+      pthread_mutex_destory(&mutex_);   
       return -1;
     }
     return 0;
   }
 
   int push(const T& item) {
-    if (pthread_mutex_lock(&mutex) != 0) {
+    if (pthread_mutex_lock(&mutex_) != 0) {
       return -1;
     }
+
     queue_.push(item); 
-    //if (queue_.size() == 1) {
-    //  pthread_cond_broadcast(cond_);
-    //}
-    if (pthread_cond_broadcast(cond_) != 0) {
+
+    // we havn't to deal with failed return, since either success
+    // or fail the followed code should been executed at all.
+    // pthread_cond_broadcast(cond_);
+
+    if (pthread_mutex_unlock(&mutex_) != 0) {
       return -1;
     }
-    if (pthread_mutex_unlock(&mutex) != 0) {
-      return 
+
+    return 0;
+  }
+
+  int pop(T* item) {
+    assert(item);
+    if (pthread_mutex_lock(&mutex_) != 0) {
+      return -1;
     }
+    (*item) = queue_.front();
+    queue_.pop();
+
+    if (pthread_mutex_unlock(&mutex) != 0) {
+      return -1;
+    }
+
     return 0;
   }
-  int pop(const T* item) {
+  
+  int pop(T* item, int timeout_ms) {
     return 0;
   }
+
  private:
   pthread_mutex_t   mutex_;
   pthread_cond_t    cond_;
