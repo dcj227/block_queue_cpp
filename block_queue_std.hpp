@@ -81,6 +81,7 @@ class BlockQueueStd {
     */
 
     if (!queue_.empty() || pthread_cond_wait(&cond_, &mutex_) == 0) {
+      pthread_mutex_unlock(&mutex_);
       (*item) = queue_.front();
       queue_.pop();
     }
@@ -104,7 +105,9 @@ class BlockQueueStd {
       return -1;
     }
 
-    if (!queue_.empty() || pthread_cond_timedwait(&cond_, &mutex_, &t)) {
+    if (!queue_.empty()
+        || pthread_cond_timedwait(&cond_, &mutex_, &t) == 0) {
+      pthread_mutex_unlock(&mutex_);
       (*item) = queue_.front();
       queue_.pop();
     }
