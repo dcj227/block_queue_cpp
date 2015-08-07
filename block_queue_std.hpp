@@ -16,12 +16,12 @@
 #include <queue>
 
 template<class T>
-class BlockQueueStd {
+class BlockQueue {
  public:
-  BlockQueueStd() {
+  BlockQueue() {
   }
 
-  ~BlockQueueStd() {
+  ~BlockQueue() {
   }
 
   int init() {
@@ -120,8 +120,8 @@ class BlockQueueStd {
   }
 
  private:
-  BlockQueueStd(const BlockQueueStd& queue);
-  BlockQueueStd& operator=(const BlockQueueStd& queue);
+  BlockQueue(const BlockQueue& queue);
+  BlockQueue& operator=(const BlockQueue& queue);
 
   pthread_mutex_t   mutex_;
   pthread_cond_t    cond_;

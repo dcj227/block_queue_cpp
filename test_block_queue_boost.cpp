@@ -1,14 +1,14 @@
 /***********************************************************************
  * Author :          dingchangjiang
  * Email :           dcj227@163.com
- * Last modified : 2015-08-05 22:32
- * Filename : test_block_queue_std.cpp
+ * Last modified : 2015-08-06 23:55
+ * Filename : test_block_queue_boost.cpp
  * Description : 
  * *********************************************************************/
 
 #include <iostream>
 
-#include "block_queue_std.hpp"
+#include "block_queue_boost.hpp"
 
 BlockQueue<int> g_queue;
 
@@ -24,12 +24,12 @@ void *p(void *args) {
 void *c(void *args) {
   while(true) {
     int t = 0;
-    if (g_queue.pop(&t, 1000) != 0) {
-      std::cout << "timeout" << std::endl;
-      continue;
-    } else {
-      std::cout << t << std::endl;
-    }
+//    if (g_queue.pop(&t, 1000) != 0) {
+//      std::cout << "timeout" << std::endl;
+//      continue;
+//    } else {
+//      std::cout << t << std::endl;
+//    }
     g_queue.pop(&t);
     std::cout << "block=" << t << std::endl;
   }
@@ -37,8 +37,6 @@ void *c(void *args) {
 }
 
 int main() {
-  g_queue.init();
-
   pthread_t id;
   pthread_create(&id, NULL, p, NULL);
   // pthread_create(&id, NULL, p, NULL);
@@ -47,7 +45,5 @@ int main() {
   for ( ; ; ) {
     sleep(1);
   }
-
-  g_queue.clean();
   return 0;
 }
