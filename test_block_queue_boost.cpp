@@ -6,6 +6,8 @@
  * Description : 
  * *********************************************************************/
 
+#include <pthread.h>
+
 #include <iostream>
 
 #include "block_queue_boost.hpp"
