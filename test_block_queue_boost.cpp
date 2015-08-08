@@ -26,12 +26,12 @@ void *p(void *args) {
 void *c(void *args) {
   while(true) {
     int t = 0;
-//    if (g_queue.pop(&t, 1000) != 0) {
-//      std::cout << "timeout" << std::endl;
-//      continue;
-//    } else {
-//      std::cout << t << std::endl;
-//    }
+    if (g_queue.pop(&t, 1000) != 0) {
+      std::cout << "timeout" << std::endl;
+      continue;
+    } else {
+      std::cout << t << std::endl;
+    }
     g_queue.pop(&t);
     std::cout << "block=" << t << std::endl;
   }
